@@ -1,0 +1,21 @@
+# 23CSE301 Machine Learning Capstone - Python dependencies
+# Python 3.11 or newer (notebooks were run on 3.13 / 3.14)
+#
+# Minimum versions are used instead of exact pins because the team runs
+# different Python versions. scikit-learn >= 1.2 is a hard requirement:
+# OneHotEncoder(sparse_output=...) does not exist in earlier releases.
+
+numpy>=1.26
+pandas>=2.1
+scipy>=1.11
+scikit-learn>=1.4
+matplotlib>=3.8
+seaborn>=0.13
+
+# Notebook environment
+jupyter>=1.0
+notebook>=7.0
+ipykernel>=6.29
+
+# Model persistence (models/ directory, .pkl files)
+joblib>=1.3
