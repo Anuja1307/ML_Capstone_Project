@@ -31,7 +31,6 @@ except ImportError:
 # Page configuration
 st.set_page_config(
     page_title="ML Capstone – Prediction System",
-    page_icon="🎓",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -39,6 +38,33 @@ st.set_page_config(
 # Custom academic-style CSS
 st.markdown("""
 <style>
+    [data-testid="stSidebar"] {
+        min-width: min(20rem, 88vw);
+    }
+    [data-testid="stSidebar"] > div:first-child {
+        width: min(20rem, 88vw);
+    }
+    [data-testid="stSidebar"] [data-testid="stButton"] button {
+        justify-content: flex-start;
+        min-height: 2.5rem;
+        margin: 0.15rem 0;
+        border: 1px solid transparent;
+        border-radius: 0.35rem;
+        text-align: left;
+    }
+    [data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"] {
+        background-color: #1E3A8A;
+        border-color: #1E3A8A;
+        color: #FFFFFF;
+    }
+    [data-testid="stSidebar"] [data-testid="stButton"] button[kind="secondary"] {
+        background-color: transparent;
+        color: inherit;
+    }
+    [data-testid="stSidebar"] [data-testid="stButton"] button:focus-visible {
+        outline: 3px solid #60A5FA;
+        outline-offset: 2px;
+    }
     .main-header {
         font-size: 2.2rem;
         font-weight: 700;
@@ -50,22 +76,6 @@ st.markdown("""
         color: #4B5563;
         margin-bottom: 1.5rem;
     }
-    .status-card {
-        padding: 1rem 1.25rem;
-        border-radius: 0.5rem;
-        margin-bottom: 1rem;
-        border: 1px solid #E5E7EB;
-        background-color: #F9FAFB;
-    }
-    .metric-badge {
-        display: inline-block;
-        padding: 0.25rem 0.5rem;
-        border-radius: 0.25rem;
-        font-weight: 600;
-        font-size: 0.85rem;
-    }
-    .badge-success { background-color: #DEF7EC; color: #03543F; }
-    .badge-pending { background-color: #FEF3C7; color: #92400E; }
     .result-box {
         padding: 1.5rem;
         border-radius: 0.5rem;
@@ -92,30 +102,35 @@ st.markdown("""
 
 
 def render_sidebar():
-    st.sidebar.title("🎓 Capstone Navigation")
-    st.sidebar.markdown("**Course:** 23CSE301 Machine Learning")
-    st.sidebar.markdown("**Academic Year:** 2026–27")
+    st.sidebar.title("ML CAPSTONE")
+    st.sidebar.markdown("23CSE301 Machine Learning")
+    st.sidebar.caption("Academic Year 2026–27")
     st.sidebar.markdown("---")
+    st.sidebar.markdown("##### NAVIGATION")
 
-    page = st.sidebar.radio(
-        "Select Module:",
-        ["🏠 Home", "📈 Regression Prediction", "👥 Classification Prediction", "ℹ️ Model Information"]
-    )
+    page_names = [
+        "Home",
+        "Regression Prediction",
+        "Classification Prediction",
+        "Model Information",
+    ]
+    if "selected_page" not in st.session_state:
+        st.session_state.selected_page = "Home"
 
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📋 Implementation Scope")
-    st.sidebar.markdown("""
-    **Review 1 Scope (Current):**
-    - ✅ **Regression Track** (Ames Housing)
-    - ✅ **Classification Part A** (Telco Churn)
+    def select_page(page_name):
+        st.session_state.selected_page = page_name
 
-    **Review 2 Scope (Planned):**
-    - ⏳ **Classification Part B** (Ensembles, MLP)
-    - ⏳ **Clustering Track** (K-Means, Hierarchical)
-    """)
-    st.sidebar.markdown("---")
-    st.sidebar.caption("Bonus Interactive GUI – Streamlit Interface")
-    return page
+    for page_name in page_names:
+        st.sidebar.button(
+            page_name,
+            key=f"nav_{page_name.lower().replace(' ', '_')}",
+            type="primary" if st.session_state.selected_page == page_name else "secondary",
+            use_container_width=True,
+            on_click=select_page,
+            args=(page_name,),
+        )
+
+    return st.session_state.selected_page
 
 
 def render_home():
@@ -124,52 +139,40 @@ def render_home():
         unsafe_allow_html=True
     )
     st.markdown(
-        "<div class=\'sub-header\'>Interactive prediction interface for the completed Regression and Classification Part-A tracks.</div>",
+        "<div class=\'sub-header\'>Interactive prediction interface for Regression and Classification Part-A tracks.</div>",
         unsafe_allow_html=True
     )
 
-    st.subheader("\U0001f4cc Project Overview")
+    st.subheader("Project Overview")
     st.markdown("""
     This machine learning system provides end-to-end predictive capabilities developed under the
     **23CSE301 Machine Learning Capstone Guidelines**. It demonstrates production-ready pipelines
     with strict data-leakage protection, validated feature engineering, and real-time model inference.
     """)
 
-    st.markdown("### \U0001f3af Problem Statements")
+    st.markdown("### Project Tracks")
 
-    with st.expander("1. Ames Housing Sale Price Prediction (Regression) \u2014 \u2705 Implemented", expanded=True):
+    with st.expander("Ames Housing Sale Price Prediction (Regression)", expanded=True):
         st.markdown(r"""
         - **Objective:** Predict residential property sale prices in Ames, Iowa based on architectural and structural features.
         - **Target Variable:** `SalePrice` (Continuous, evaluated in USD).
         - **Evaluated Model:** Lasso Regression ($\alpha = 0.001$) achieving $R^2 = 0.9385$, with logarithmic target transformation and standardized features.
         - **Feature Engineering:** `TotalSF` (total usable square footage), `HouseAge`, and weighted `TotalBath`.
-        - \u2192 Use **Regression Prediction** from the sidebar to make predictions.
+        - Use **Regression Prediction** from the sidebar to make predictions.
         """)
 
-    with st.expander("2. Telco Customer Churn Prediction (Classification Part A) \u2014 \u2705 Implemented", expanded=True):
+    with st.expander("Telco Customer Churn Prediction (Classification Part A)", expanded=True):
         st.markdown("""
         - **Objective:** Identify telecom customers at risk of churning to support proactive retention strategies.
         - **Target Variable:** `Churn` (Binary: 0 = Stay, 1 = Churn).
         - **Evaluated Models:** 5 benchmark baseline algorithms (Logistic Regression, SVC, KNN, Decision Tree, Gaussian Naive Bayes).
         - **Feature Engineering:** `TotalServices` derived automatically from 8 distinct telecom subscription features.
         - **Leakage Prevention:** Training-only IQR outlier clipping, OneHotEncoding, and StandardScaling.
-        - \u2192 Use **Classification Prediction** from the sidebar to make predictions.
-        """)
-
-    with st.expander("3. Classification Part B \u2014 Ensemble and MLP Models (\u23f3 Not yet implemented)", expanded=False):
-        st.markdown("""
-        - **Planned Scope:** Random Forest Classifier, AdaBoost, Gradient Boosting, Bagging Classifier, MLP Classifier.
-        - **Status:** Planned for Review 2. No predictions are available in this GUI yet.
-        """)
-
-    with st.expander("4. Clustering Track \u2014 K-Means and Hierarchical (\u23f3 Not yet implemented)", expanded=False):
-        st.markdown("""
-        - **Planned Scope:** K-Means Clustering (Elbow method) and Agglomerative Hierarchical Clustering (Dendrogram).
-        - **Status:** Planned for Review 2. No predictions are available in this GUI yet.
+        - Use **Classification Prediction** from the sidebar to make predictions.
         """)
 
     st.markdown("---")
-    st.subheader("\U0001f6e0\ufe0f Technical Stack")
+    st.subheader("Technical Stack")
     tc1, tc2, tc3 = st.columns(3)
     with tc1:
         st.markdown("""
@@ -191,9 +194,9 @@ def render_home():
         """)
 
 def render_regression_page():
-    st.markdown('<div class="main-header">\U0001f4c8 Ames Housing \u2013 Sale Price Prediction</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-header">Regression Prediction</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="sub-header">Predict home sale prices in USD ($) using the validated Lasso Regression pipeline.</div>',
+        '<div class="sub-header">Ames Housing: predict home sale prices in USD using the validated Lasso Regression pipeline.</div>',
         unsafe_allow_html=True
     )
 
@@ -210,7 +213,7 @@ def render_regression_page():
     )
 
     with st.form("regression_form"):
-        st.subheader("\U0001f3e0 Primary Property Features")
+        st.subheader("Property Information")
         c1, c2, c3 = st.columns(3)
 
         with c1:
@@ -229,7 +232,7 @@ def render_regression_page():
             year_built = st.number_input("Year Built", min_value=1870, max_value=2010, value=2003)
             yr_sold = st.number_input("Year Sold", min_value=2006, max_value=2010, value=2008)
 
-        st.subheader("\U0001f4cd Location & Architecture")
+        st.subheader("Property Characteristics")
         c4, c5, c6 = st.columns(3)
 
         neighborhoods = metadata.get("cat_options", {}).get("Neighborhood", ["CollgCr", "NAmes", "Edwards"])
@@ -245,7 +248,7 @@ def render_regression_page():
             house_style = st.selectbox("House Style", options=house_styles,
                                        index=house_styles.index("2Story") if "2Story" in house_styles else 0)
 
-        st.subheader("\U0001f6c1 Bathrooms")
+        st.subheader("Additional Details")
         c7, c8, c9, c10 = st.columns(4)
         with c7:
             full_bath = st.selectbox("Full Baths Above Grade", [1, 2, 3, 4], index=1)
@@ -268,7 +271,7 @@ def render_regression_page():
         > - **Total Weighted Bathrooms (`TotalBath`):** `{calc_total_bath}`
         """)
 
-        with st.expander("\U0001f6e0\ufe0f Advanced Architectural Attributes (Defaults Pre-filled)", expanded=False):
+        with st.expander("Advanced Architectural Attributes (Defaults Pre-filled)", expanded=False):
             ac1, ac2, ac3 = st.columns(3)
             with ac1:
                 lot_frontage = st.number_input(
@@ -286,7 +289,7 @@ def render_regression_page():
                 fireplaces = st.selectbox("Fireplaces", [0, 1, 2, 3], index=1)
                 heating_qc = st.selectbox("Heating Quality & Condition", ["Ex", "Gd", "TA", "Fa", "Po"], index=0)
 
-        submitted = st.form_submit_button("\U0001f4b0 Predict House Price", use_container_width=True)
+        submitted = st.form_submit_button("Predict House Price", use_container_width=True)
 
     if submitted:
         user_inputs = {
@@ -335,9 +338,9 @@ def render_regression_page():
                 st.error(f"Prediction Error: {exc}")
 
 def render_classification_page():
-    st.markdown('<div class="main-header">\U0001f465 Telco Customer Churn Prediction</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-header">Telco Customer Churn Prediction</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="sub-header">Evaluate customer churn across the 5 Part-A classification algorithms.</div>',
+        '<div class="sub-header">Classification Track — Part A</div>',
         unsafe_allow_html=True
     )
 
@@ -355,7 +358,7 @@ def render_classification_page():
         "nb": "Gaussian Naive Bayes (Accuracy: 68.37%, F1: 0.7021)"
     }
 
-    st.subheader("\u2699\ufe0f Model Configuration")
+    st.subheader("Model Configuration")
     selected_key = st.selectbox(
         "Select Classification Algorithm (Part A):",
         options=list(algo_options.keys()),
@@ -364,7 +367,7 @@ def render_classification_page():
     )
 
     with st.form("classification_form"):
-        st.subheader("\U0001f464 Customer Demographics")
+        st.subheader("Customer Demographics")
         d1, d2, d3, d4 = st.columns(4)
         with d1:
             gender = st.selectbox("Gender", ["Female", "Male"], index=0)
@@ -375,7 +378,7 @@ def render_classification_page():
         with d4:
             dependents = st.selectbox("Dependents", ["Yes", "No"], index=1)
 
-        st.subheader("\U0001f4c4 Account & Billing Information")
+        st.subheader("Account & Billing Information")
         b1, b2, b3 = st.columns(3)
         with b1:
             tenure = st.slider("Tenure (Months with company)", min_value=1, max_value=72, value=12)
@@ -397,7 +400,7 @@ def render_classification_page():
             calc_est_total = round(tenure * monthly_charges, 2)
             total_charges = st.number_input("Total Charges ($)", min_value=18.0, max_value=9000.0, value=float(calc_est_total), step=10.0)
 
-        st.subheader("\U0001f310 Telecommunications & Internet Services")
+        st.subheader("Telecommunications & Internet Services")
         s1, s2, s3, s4 = st.columns(4)
 
         with s1:
@@ -451,7 +454,7 @@ def render_classification_page():
         > - **Total Subscribed Services (`TotalServices`):** `{calc_total_services} / 8 services`
         """)
 
-        submitted = st.form_submit_button("\U0001f50d Predict Churn", use_container_width=True)
+        submitted = st.form_submit_button("Predict Churn", use_container_width=True)
 
     if submitted:
         user_inputs = {
@@ -484,14 +487,14 @@ def render_classification_page():
                     st.markdown("""
                     <div class="result-box" style="background-color: #FEF2F2; border-color: #F87171;">
                         <div style="font-size: 0.95rem; color: #991B1B; font-weight: 600;">PREDICTION RESULT</div>
-                        <div class="result-churn">\u26a0\ufe0f Likely to Churn</div>
+                        <div class="result-churn">Prediction: Likely to Churn</div>
                     </div>
                     """, unsafe_allow_html=True)
                 else:
                     st.markdown("""
                     <div class="result-box" style="background-color: #ECFDF5; border-color: #34D399;">
                         <div style="font-size: 0.95rem; color: #065F46; font-weight: 600;">PREDICTION RESULT</div>
-                        <div class="result-stay">\u2705 Likely to Stay</div>
+                        <div class="result-stay">Prediction: Likely to Stay</div>
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -508,22 +511,21 @@ def render_classification_page():
                 st.error(f"Prediction Error: {exc}")
 
 def render_model_info_page():
-    st.markdown('<div class="main-header">ℹ️ Model Information & Benchmarks</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-header">Model Information</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="sub-header">Factual performance summaries strictly from the completed project notebooks.</div>',
+        '<div class="sub-header">Factual performance summaries from the project notebooks.</div>',
         unsafe_allow_html=True
     )
 
-    tab1, tab2, tab3 = st.tabs([
-        "📈 Regression Track (Ames)",
-        "👥 Classification Track (Part A)",
-        "⏳ Review 2 Roadmap"
+    tab1, tab2 = st.tabs([
+        "Regression Track",
+        "Classification Track — Part A",
     ])
 
     with tab1:
-        st.subheader("Ames Housing Price Prediction Pipeline")
+        st.subheader("Regression Track")
         st.markdown(r"""
-        - **Dataset:** Ames Housing dataset (`data/Ameshousing.csv`, 1,460 records).
+        - **Dataset:** Ames Housing (`data/Ameshousing.csv`, 1,460 records).
         - **Target:** `SalePrice` (Transformed via `log1p` during training, evaluated in original USD units via `expm1`).
         - **Data Cleaning:** Structural absences in Garage/Pool/Basement columns replaced with `'None'`/`0`; neighborhood-median imputation for `LotFrontage`; two partial-sale outliers ($> 4000$ sq ft, $< \$300,000$) removed.
         - **Feature Engineering:**
@@ -548,7 +550,7 @@ def render_model_info_page():
         st.dataframe(pd.DataFrame(reg_data), hide_index=True, use_container_width=True)
 
     with tab2:
-        st.subheader("Telco Customer Churn Pipeline (Part A)")
+        st.subheader("Classification Track — Part A")
         st.markdown("""
         - **Dataset:** Telco Customer Churn (`data/TelcoCustomerChurn.csv`, 7,043 records).
         - **Target:** `Churn` (Mapped as `{'No': 0, 'Yes': 1}`).
@@ -570,31 +572,15 @@ def render_model_info_page():
         ]
         st.dataframe(pd.DataFrame(clf_data), hide_index=True, use_container_width=True)
 
-    with tab3:
-        st.subheader("Review 2 Extension Roadmap")
-        st.markdown("""
-        The GUI architecture has been built with a modular design to enable direct plug-in of Review 2 deliverables
-        without altering the existing inference pipelines:
-
-        #### 1. Classification Track – Part B (Planned):
-        - **Algorithms:** Random Forest Classifier, AdaBoost Classifier, Gradient Boosting Classifier (GBM/XGBoost), Bagging Classifier, MLP Classifier (Neural Network).
-        - **Rubric Requirement:** Hyperparameter tuning via GridSearchCV/RandomizedSearchCV, ROC-AUC evaluation, and consolidated 10-algorithm comparison table.
-
-        #### 2. Clustering Track (Planned):
-        - **Algorithms:** K-Means Clustering (Elbow method analysis) and Agglomerative Hierarchical Clustering (Dendrogram & linkage evaluation).
-        - **Evaluation:** Silhouette Score, Davies-Bouldin Index, Calinski-Harabasz Index, and PCA 2D scatter visualizations.
-        """)
-
-
 def main():
     selected_page = render_sidebar()
-    if selected_page == "🏠 Home":
+    if selected_page == "Home":
         render_home()
-    elif selected_page == "📈 Regression Prediction":
+    elif selected_page == "Regression Prediction":
         render_regression_page()
-    elif selected_page == "👥 Classification Prediction":
+    elif selected_page == "Classification Prediction":
         render_classification_page()
-    elif selected_page == "ℹ️ Model Information":
+    elif selected_page == "Model Information":
         render_model_info_page()
 
 
