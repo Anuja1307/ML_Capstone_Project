@@ -1,0 +1,182 @@
+{
+  "dataset": "Telco Customer Churn",
+  "target": "Churn",
+  "classes": [
+    "No",
+    "Yes"
+  ],
+  "outlier_bounds": {
+    "tenure": [
+      -61.5,
+      126.5
+    ],
+    "MonthlyCharges": [
+      -45.575,
+      171.425
+    ],
+    "TotalCharges": [
+      -4670.049999999999,
+      8884.75
+    ]
+  },
+  "service_cols": [
+    "PhoneService",
+    "MultipleLines",
+    "OnlineSecurity",
+    "OnlineBackup",
+    "DeviceProtection",
+    "TechSupport",
+    "StreamingTV",
+    "StreamingMovies"
+  ],
+  "categorical_features": [
+    "gender",
+    "Partner",
+    "Dependents",
+    "PhoneService",
+    "MultipleLines",
+    "InternetService",
+    "OnlineSecurity",
+    "OnlineBackup",
+    "DeviceProtection",
+    "TechSupport",
+    "StreamingTV",
+    "StreamingMovies",
+    "Contract",
+    "PaperlessBilling",
+    "PaymentMethod"
+  ],
+  "numerical_features": [
+    "SeniorCitizen",
+    "tenure",
+    "MonthlyCharges",
+    "TotalCharges",
+    "TotalServices"
+  ],
+  "cat_options": {
+    "gender": [
+      "Female",
+      "Male"
+    ],
+    "Partner": [
+      "No",
+      "Yes"
+    ],
+    "Dependents": [
+      "No",
+      "Yes"
+    ],
+    "PhoneService": [
+      "No",
+      "Yes"
+    ],
+    "MultipleLines": [
+      "No",
+      "No phone service",
+      "Yes"
+    ],
+    "InternetService": [
+      "DSL",
+      "Fiber optic",
+      "No"
+    ],
+    "OnlineSecurity": [
+      "No",
+      "No internet service",
+      "Yes"
+    ],
+    "OnlineBackup": [
+      "No",
+      "No internet service",
+      "Yes"
+    ],
+    "DeviceProtection": [
+      "No",
+      "No internet service",
+      "Yes"
+    ],
+    "TechSupport": [
+      "No",
+      "No internet service",
+      "Yes"
+    ],
+    "StreamingTV": [
+      "No",
+      "No internet service",
+      "Yes"
+    ],
+    "StreamingMovies": [
+      "No",
+      "No internet service",
+      "Yes"
+    ],
+    "Contract": [
+      "Month-to-month",
+      "One year",
+      "Two year"
+    ],
+    "PaperlessBilling": [
+      "No",
+      "Yes"
+    ],
+    "PaymentMethod": [
+      "Bank transfer (automatic)",
+      "Credit card (automatic)",
+      "Electronic check",
+      "Mailed check"
+    ]
+  },
+  "feature_defaults": {
+    "SeniorCitizen": 0,
+    "tenure": 29,
+    "MonthlyCharges": 70.6,
+    "TotalCharges": 1410.25,
+    "gender": "Male",
+    "Partner": "No",
+    "Dependents": "No",
+    "PhoneService": "Yes",
+    "MultipleLines": "No",
+    "InternetService": "Fiber optic",
+    "OnlineSecurity": "No",
+    "OnlineBackup": "No",
+    "DeviceProtection": "No",
+    "TechSupport": "No",
+    "StreamingTV": "No",
+    "StreamingMovies": "No",
+    "Contract": "Month-to-month",
+    "PaperlessBilling": "Yes",
+    "PaymentMethod": "Electronic check"
+  },
+  "metrics_summary": [
+    {
+      "key": "logistic",
+      "Algorithm": "Logistic Regression",
+      "Accuracy": 0.805259,
+      "Weighted F1": 0.801407
+    },
+    {
+      "key": "svc",
+      "Algorithm": "Support Vector Classifier",
+      "Accuracy": 0.792466,
+      "Weighted F1": 0.783133
+    },
+    {
+      "key": "knn",
+      "Algorithm": "K-Nearest Neighbors",
+      "Accuracy": 0.761905,
+      "Weighted F1": 0.763374
+    },
+    {
+      "key": "dt",
+      "Algorithm": "Decision Tree Classifier",
+      "Accuracy": 0.739161,
+      "Weighted F1": 0.740563
+    },
+    {
+      "key": "nb",
+      "Algorithm": "Gaussian Naive Bayes",
+      "Accuracy": 0.683724,
+      "Weighted F1": 0.702132
+    }
+  ]
+}
