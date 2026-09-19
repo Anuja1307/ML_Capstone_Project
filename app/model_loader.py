@@ -1,12 +1,10 @@
 """
 app/model_loader.py
 
-Metadata-only loader for the ML Capstone GUI.
+Metadata loader for the ML Capstone GUI.
 
-Loads only JSON files (no sklearn / joblib dependency).
-The serialised .pkl pipelines are loaded inside predict_subprocess.py
-which runs under Anaconda Python — keeping the Streamlit process free
-of any sklearn C-extension imports.
+Fitted scikit-learn pipelines are loaded directly by ``pipeline_utils.py``
+from the repository's ``models/`` directory.
 """
 
 import json

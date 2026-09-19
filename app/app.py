@@ -177,7 +177,7 @@ def render_home():
     with tc1:
         st.markdown("""
         **Interface**
-        - Streamlit (Anaconda Python)
+        - Streamlit
         - Pandas, NumPy
         """)
     with tc2:
@@ -321,7 +321,7 @@ def render_regression_page():
         if lot_frontage > 0:
             user_inputs["LotFrontage"] = float(lot_frontage)
 
-        with st.spinner("Running prediction via Anaconda Python..."):
+        with st.spinner("Running prediction..."):
             try:
                 predicted_price = predict_regression_price(user_inputs)
                 st.markdown(f"""
@@ -479,7 +479,7 @@ def render_classification_page():
             "TotalCharges": float(total_charges),
         }
 
-        with st.spinner(f"Running {algo_options[selected_key].split('(')[0].strip()} via Anaconda Python..."):
+        with st.spinner(f"Running {algo_options[selected_key].split('(')[0].strip()}..."):
             try:
                 pred_class, prob_churn = predict_classification_churn(user_inputs, selected_key)
 
