@@ -22,7 +22,13 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
-from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error, accuracy_score, f1_score
+from sklearn.metrics import (r2_score, mean_squared_error, mean_absolute_error,
+    accuracy_score, precision_score, recall_score, f1_score, roc_auc_score)
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier, BaggingClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.cluster import KMeans, AgglomerativeClustering
+from sklearn.decomposition import PCA
+from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score
 
 # Paths
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -150,7 +156,7 @@ def export_regression():
 
 def export_classification():
     print("\n" + "=" * 60)
-    print("TRAINING & EXPORTING CLASSIFICATION MODELS (Telco Churn Part A)")
+    print("TRAINING & EXPORTING CLASSIFICATION MODELS (Telco Churn Parts A and B)")
     print("=" * 60)
 
     data_path = DATA_DIR / "TelcoCustomerChurn.csv"
@@ -211,8 +217,13 @@ def export_classification():
         "logistic": ("Logistic Regression", LogisticRegression(random_state=42, max_iter=1000)),
         "svc": ("Support Vector Classifier", SVC(random_state=42)),
         "knn": ("K-Nearest Neighbors", KNeighborsClassifier(n_neighbors=5)),
-        "dt": ("Decision Tree Classifier", DecisionTreeClassifier(random_state=42)),
-        "nb": ("Gaussian Naive Bayes", GaussianNB())
+        "dt": ("Decision Tree Classifier", DecisionTreeClassifier(random_state=42, max_depth=3)),
+        "nb": ("Gaussian Naive Bayes", GaussianNB()),
+        "rf": ("Random Forest Classifier", RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)),
+        "adaboost": ("AdaBoost Classifier", AdaBoostClassifier(n_estimators=50, learning_rate=1.0, random_state=42)),
+        "gradient_boosting": ("Gradient Boosting Classifier", GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, random_state=42)),
+        "bagging": ("Bagging Classifier", BaggingClassifier(estimator=DecisionTreeClassifier(random_state=42), n_estimators=50, random_state=42, n_jobs=-1)),
+        "mlp": ("MLP Classifier", MLPClassifier(hidden_layer_sizes=(100,), activation="relu", max_iter=1000, random_state=42))
     }
 
     metrics_table = []
@@ -225,6 +236,7 @@ def export_classification():
         pipe.fit(X_train, y_train)
 
         preds = pipe.predict(X_test)
+        probabilities = pipe.predict_proba(X_test)[:, list(pipe.classes_).index(1)] if hasattr(pipe, 'predict_proba') else pipe.decision_function(X_test)
         acc = round(float(accuracy_score(y_test, preds)), 6)
         f1 = round(float(f1_score(y_test, preds, average='weighted')), 6)
 
@@ -232,7 +244,10 @@ def export_classification():
             "key": key,
             "Algorithm": algo_name,
             "Accuracy": acc,
-            "Weighted F1": f1
+            "Precision": round(float(precision_score(y_test, preds, zero_division=0)), 6),
+            "Recall": round(float(recall_score(y_test, preds, zero_division=0)), 6),
+            "Weighted F1": f1,
+            "ROC-AUC": round(float(roc_auc_score(y_test, probabilities)), 6)
         })
         print(f"Trained {algo_name:<28} | Acc: {acc:.4f} | F1: {f1:.4f}")
 
@@ -260,7 +275,8 @@ def export_classification():
         "numerical_features": numerical_features,
         "cat_options": cat_options,
         "feature_defaults": feature_defaults,
-        "metrics_summary": metrics_table
+        "metrics_summary": metrics_table,
+        "model_selection": "Baseline estimators from the completed notebook. Tuned models are reported separately; the notebook selects Logistic Regression as best general-purpose baseline and records MLP tuning gains."
     }
 
     meta_path = MODELS_DIR / "classification_metadata.json"
@@ -269,7 +285,37 @@ def export_classification():
     print(f"Saved: {meta_path}")
 
 
+def export_clustering():
+    """Recreate the clustering notebook preprocessing and its fixed comparison sample."""
+    data = pd.read_csv(DATA_DIR / "clusteringdataset.csv")
+    numerical = ["latitude", "longitude", "price", "minimum_nights", "number_of_reviews", "reviews_per_month", "calculated_host_listings_count", "availability_365"]
+    categorical = ["neighbourhood_group", "room_type"]
+    log_features = ["price", "minimum_nights", "number_of_reviews", "reviews_per_month", "calculated_host_listings_count", "availability_365"]
+    X = data[numerical + categorical].copy()
+    X["reviews_per_month"] = X["reviews_per_month"].fillna(0)
+    for col in log_features:
+        X[col] = np.log1p(X[col].clip(lower=0))
+    prep = ColumnTransformer([("numerical", StandardScaler(), numerical), ("categorical", OneHotEncoder(handle_unknown="ignore", sparse_output=False), categorical)])
+    processed = prep.fit_transform(X)
+    indices = np.random.default_rng(42).choice(len(X), size=3000, replace=False)
+    sample = processed[indices]
+    km = KMeans(n_clusters=3, random_state=42, n_init=10).fit(sample)
+    agg = AgglomerativeClustering(n_clusters=3, linkage="ward").fit(sample)
+    labels = {"kmeans": km.labels_, "agglomerative": agg.labels_}
+    metrics = {}
+    for key, y in labels.items():
+        metrics[key] = {"Silhouette Score": round(float(silhouette_score(sample, y)), 4), "Davies-Bouldin Index": round(float(davies_bouldin_score(sample, y)), 4), "Calinski-Harabasz Index": round(float(calinski_harabasz_score(sample, y)), 4)}
+    pca = PCA(n_components=2, random_state=42)
+    coords = pca.fit_transform(sample)
+    # Persist a single bundle so the preprocessing, model, sample and reference labels stay aligned.
+    joblib.dump({"preprocessor": prep, "kmeans": km, "agglomerative": agg, "sample_processed": sample, "sample_indices": indices, "labels": labels, "pca": pca, "pca_coordinates": coords, "profile": data.iloc[indices][numerical + categorical].reset_index(drop=True)}, MODELS_DIR / "clustering_artifacts.pkl")
+    metadata = {"dataset": "Airbnb NYC 2019", "source": "data/clusteringdataset.csv", "features": numerical + categorical, "numerical_features": numerical, "categorical_features": categorical, "log_features": log_features, "missing_value_rule": "reviews_per_month missing values filled with 0; last_review excluded", "sample_size": 3000, "random_state": 42, "selected_n_clusters": 3, "kmeans": {"n_clusters": 3, "random_state": 42, "n_init": 10}, "agglomerative": {"n_clusters": 3, "linkage": "ward"}, "metrics": metrics, "pca_explained_variance": [round(float(v), 6) for v in pca.explained_variance_ratio_]}
+    (MODELS_DIR / "clustering_metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+    print("Saved clustering model bundle and metadata")
+
+
 if __name__ == "__main__":
     export_regression()
     export_classification()
+    export_clustering()
     print("\nAll models and metadata successfully exported!")

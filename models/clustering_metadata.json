@@ -1,0 +1,67 @@
+{
+  "dataset": "Airbnb NYC 2019",
+  "source": "data/clusteringdataset.csv",
+  "features": [
+    "latitude",
+    "longitude",
+    "price",
+    "minimum_nights",
+    "number_of_reviews",
+    "reviews_per_month",
+    "calculated_host_listings_count",
+    "availability_365",
+    "neighbourhood_group",
+    "room_type"
+  ],
+  "numerical_features": [
+    "latitude",
+    "longitude",
+    "price",
+    "minimum_nights",
+    "number_of_reviews",
+    "reviews_per_month",
+    "calculated_host_listings_count",
+    "availability_365"
+  ],
+  "categorical_features": [
+    "neighbourhood_group",
+    "room_type"
+  ],
+  "log_features": [
+    "price",
+    "minimum_nights",
+    "number_of_reviews",
+    "reviews_per_month",
+    "calculated_host_listings_count",
+    "availability_365"
+  ],
+  "missing_value_rule": "reviews_per_month missing values filled with 0; last_review excluded",
+  "sample_size": 3000,
+  "random_state": 42,
+  "selected_n_clusters": 3,
+  "kmeans": {
+    "n_clusters": 3,
+    "random_state": 42,
+    "n_init": 10
+  },
+  "agglomerative": {
+    "n_clusters": 3,
+    "linkage": "ward"
+  },
+  "metrics": {
+    "kmeans": {
+      "Silhouette Score": 0.2099,
+      "Davies-Bouldin Index": 1.6399,
+      "Calinski-Harabasz Index": 628.1446
+    },
+    "agglomerative": {
+      "Silhouette Score": 0.1681,
+      "Davies-Bouldin Index": 1.9583,
+      "Calinski-Harabasz Index": 500.2212
+    }
+  },
+  "pca_explained_variance": [
+    0.242284,
+    0.185727
+  ]
+}

@@ -86,6 +86,22 @@ def predict_classification_churn(
     metadata = _load_metadata("classification_metadata.json")
     record = user_inputs.copy()
 
+    required = set(metadata.get("categorical_features", [])) | set(metadata.get("numerical_features", []))
+    missing = sorted(required - set(record) - {"TotalServices"})
+    if missing:
+        raise ValueError(f"Missing customer inputs: {', '.join(missing)}")
+    for column, options in metadata.get("cat_options", {}).items():
+        if column in record and record[column] not in options:
+            raise ValueError(f"Invalid value for {column}. Choose one of the listed options.")
+    for column in ("tenure", "MonthlyCharges", "TotalCharges"):
+        if column in record:
+            try:
+                value = float(record[column])
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"{column} must be a number.") from exc
+            if not np.isfinite(value) or value < 0:
+                raise ValueError(f"{column} must be a finite, non-negative number.")
+
     monthly_charges = float(record.get("MonthlyCharges", 50.0))
     tenure = int(record.get("tenure", 1))
     if not record.get("TotalCharges") or float(record.get("TotalCharges", 0)) <= 0:
@@ -104,5 +120,6 @@ def predict_classification_churn(
     probability = None
     estimator = model.named_steps.get("model")
     if hasattr(estimator, "predict_proba"):
-        probability = float(model.predict_proba(input_df)[0][1])
+        positive_index = list(estimator.classes_).index(1)
+        probability = float(model.predict_proba(input_df)[0][positive_index])
     return predicted_class, probability

@@ -42,6 +42,17 @@ def load_classification_metadata():
         with open(meta_path, "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception as exc:
-        traceback.print_exc()
         st.error(f"Failed to load classification metadata: {exc}")
+        return None
+
+
+@st.cache_data
+def load_clustering_metadata():
+    path = MODELS_DIR / "clustering_metadata.json"
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        st.error(f"Failed to load clustering metadata: {exc}")
         return None

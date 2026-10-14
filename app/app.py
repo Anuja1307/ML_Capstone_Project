@@ -9,23 +9,31 @@ Supports:
 
 import streamlit as st
 import pandas as pd
+import joblib
+import numpy as np
+import matplotlib.pyplot as plt
+from pathlib import Path
 try:
     from model_loader import (
         load_regression_metadata,
         load_classification_metadata,
+        load_clustering_metadata,
     )
     from pipeline_utils import (
         predict_regression_price,
         predict_classification_churn,
+        _load_model,
     )
 except ImportError:
     from app.model_loader import (
         load_regression_metadata,
         load_classification_metadata,
+        load_clustering_metadata,
     )
     from app.pipeline_utils import (
         predict_regression_price,
         predict_classification_churn,
+        _load_model,
     )
 
 # Page configuration
@@ -112,6 +120,7 @@ def render_sidebar():
         "Home",
         "Regression Prediction",
         "Classification Prediction",
+        "Clustering Analysis",
         "Model Information",
     ]
     if "selected_page" not in st.session_state:
@@ -139,7 +148,7 @@ def render_home():
         unsafe_allow_html=True
     )
     st.markdown(
-        "<div class=\'sub-header\'>Interactive prediction interface for Regression and Classification Part-A tracks.</div>",
+        "<div class=\'sub-header\'>Interactive analysis across Regression, Classification, and Clustering project tracks.</div>",
         unsafe_allow_html=True
     )
 
@@ -161,14 +170,22 @@ def render_home():
         - Use **Regression Prediction** from the sidebar to make predictions.
         """)
 
-    with st.expander("Telco Customer Churn Prediction (Classification Part A)", expanded=True):
+    with st.expander("Telco Customer Churn Prediction (Classification)", expanded=True):
         st.markdown("""
         - **Objective:** Identify telecom customers at risk of churning to support proactive retention strategies.
         - **Target Variable:** `Churn` (Binary: 0 = Stay, 1 = Churn).
-        - **Evaluated Models:** 5 benchmark baseline algorithms (Logistic Regression, SVC, KNN, Decision Tree, Gaussian Naive Bayes).
+        - **Evaluated Models:** 10 baseline algorithms across two completed parts.
         - **Feature Engineering:** `TotalServices` derived automatically from 8 distinct telecom subscription features.
         - **Leakage Prevention:** Training-only IQR outlier clipping, OneHotEncoding, and StandardScaling.
         - Use **Classification Prediction** from the sidebar to make predictions.
+        """)
+
+    with st.expander("Airbnb NYC Listing Clustering", expanded=True):
+        st.markdown("""
+        - **Objective:** Explore groups of listings with similar location, room type, pricing, and activity characteristics.
+        - **Algorithms:** K-Means and Ward Agglomerative Hierarchical Clustering, each evaluated with three clusters.
+        - **Evaluation:** Silhouette Score, Davies-Bouldin Index, and Calinski-Harabasz Index.
+        - Use **Clustering Analysis** to inspect the sample, cluster profiles, and K-Means assignment for a new listing.
         """)
 
     st.markdown("---")
@@ -349,18 +366,18 @@ def render_classification_page():
         st.error("Missing classification metadata at models/classification_metadata.json.")
         return
 
-    # Algorithm selector based on Part-A models
+    # Use baseline estimators for all ten algorithms; notebook-tuned variants are reported separately.
     algo_options = {
-        "logistic": "Logistic Regression (Accuracy: 80.53%, F1: 0.8014)",
-        "svc": "Support Vector Classifier (Accuracy: 79.25%, F1: 0.7831)",
-        "knn": "K-Nearest Neighbors (Accuracy: 76.19%, F1: 0.7634)",
-        "dt": "Decision Tree Classifier (Accuracy: 73.92%, F1: 0.7406)",
-        "nb": "Gaussian Naive Bayes (Accuracy: 68.37%, F1: 0.7021)"
+        "logistic": "Logistic Regression", "knn": "K-Nearest Neighbors",
+        "nb": "Gaussian Naive Bayes", "dt": "Decision Tree Classifier",
+        "svc": "Support Vector Classifier", "rf": "Random Forest Classifier",
+        "adaboost": "AdaBoost Classifier", "gradient_boosting": "Gradient Boosting Classifier",
+        "bagging": "Bagging Classifier", "mlp": "MLP Classifier"
     }
 
     st.subheader("Model Configuration")
     selected_key = st.selectbox(
-        "Select Classification Algorithm (Part A):",
+        "Select Classification Algorithm:",
         options=list(algo_options.keys()),
         format_func=lambda k: algo_options[k],
         index=0
@@ -502,10 +519,7 @@ def render_classification_page():
                     st.markdown(f"**Estimated Churn Probability:** `{prob_churn * 100:.2f}%`")
                     st.progress(prob_churn)
                 else:
-                    st.info(
-                        "Standard Support Vector Classifier uses margin-based classification without Platt scaling probabilities. "
-                        "Select Logistic Regression, KNN, Gaussian Naive Bayes, or Decision Tree to view calibrated probabilities."
-                    )
+                    st.info("This fitted estimator does not expose probability estimates.")
 
             except Exception as exc:
                 st.error(f"Prediction Error: {exc}")
@@ -517,9 +531,10 @@ def render_model_info_page():
         unsafe_allow_html=True
     )
 
-    tab1, tab2 = st.tabs([
+    tab1, tab2, tab3 = st.tabs([
         "Regression Track",
-        "Classification Track — Part A",
+        "Classification Track",
+        "Clustering Track",
     ])
 
     with tab1:
@@ -547,10 +562,11 @@ def render_model_info_page():
             {"Rank": 9, "Model": "KNN Regressor", "R2": 0.8587, "RMSE ($)": 25194, "MAE ($)": 17853},
             {"Rank": 10, "Model": "Decision Tree Regressor", "R2": 0.7763, "RMSE ($)": 31706, "MAE ($)": 21041},
         ]
-        st.dataframe(pd.DataFrame(reg_data), hide_index=True, use_container_width=True)
+        st.dataframe(pd.DataFrame(reg_data), hide_index=True, width="stretch")
+        st.caption("Lasso (alpha=0.001) is the selected deployment model. Notebook tuning retained Lasso at R²=0.9385; tuned Gradient Boosting reached R²=0.9229, still below Lasso. Five-fold cross-validation mean R² was 0.9146 ± 0.0157 for Lasso.")
 
     with tab2:
-        st.subheader("Classification Track — Part A")
+        st.subheader("Classification Track")
         st.markdown("""
         - **Dataset:** Telco Customer Churn (`data/TelcoCustomerChurn.csv`, 7,043 records).
         - **Target:** `Churn` (Mapped as `{'No': 0, 'Yes': 1}`).
@@ -562,15 +578,100 @@ def render_model_info_page():
         - **Feature Engineering:** `TotalServices` dynamically derived as the sum of 8 active subscription services.
         """)
 
-        st.markdown("#### Part-A Algorithm Comparison (Test Set Split: 80/20 Stratified)")
-        clf_data = [
-            {"Algorithm": "Logistic Regression", "Accuracy": "80.53%", "Weighted F1": "0.8014", "Type": "Linear Baseline"},
-            {"Algorithm": "Support Vector Classifier", "Accuracy": "79.25%", "Weighted F1": "0.7831", "Type": "Kernel Margin Classifier"},
-            {"Algorithm": "K-Nearest Neighbors", "Accuracy": "76.19%", "Weighted F1": "0.7634", "Type": "Instance-based (k=5)"},
-            {"Algorithm": "Decision Tree Classifier", "Accuracy": "73.92%", "Weighted F1": "0.7406", "Type": "Tree Baseline"},
-            {"Algorithm": "Gaussian Naive Bayes", "Accuracy": "68.37%", "Weighted F1": "0.7021", "Type": "Probabilistic Baseline"}
-        ]
-        st.dataframe(pd.DataFrame(clf_data), hide_index=True, use_container_width=True)
+        meta = load_classification_metadata()
+        if meta and meta.get("metrics_summary"):
+            st.markdown("#### Baseline Model Comparison (Part A and Part B)")
+            baseline = pd.DataFrame(meta["metrics_summary"]).drop(columns=["key"], errors="ignore")
+            st.dataframe(baseline, hide_index=True, width="stretch")
+            st.caption("Baseline results use the completed notebook's shared 80/20 stratified split. Tuned experiments are reported separately below; Logistic Regression remains the strongest general-purpose baseline.")
+            st.markdown("#### MLP tuned experiment (separate from baseline)")
+            tuned = pd.DataFrame([
+                {"Result": "Baseline MLP", "Accuracy": 0.7761, "Precision": 0.5955, "Recall": 0.4920, "Weighted F1": 0.7689, "ROC-AUC": 0.7932},
+                {"Result": "Tuned MLP", "Accuracy": 0.7974, "Precision": 0.6268, "Recall": 0.5882, "Weighted F1": 0.7953, "ROC-AUC": 0.8348},
+            ])
+            st.dataframe(tuned, hide_index=True, width="stretch")
+            st.caption("Notebook GridSearchCV selected hidden_layer_sizes=(100,) and activation=relu; tuning used early stopping. Scores are the notebook's held-out test results.")
+
+    with tab3:
+        st.subheader("Clustering Track")
+        st.markdown("Airbnb NYC 2019 listings; a fixed reproducible sample of 3,000 rows; eight numeric features and two categorical features; `reviews_per_month` missing values filled with zero. Six skewed numeric fields use `log1p`, followed by StandardScaler and one-hot encoding. Both final models use three clusters. Ward linkage is selected for agglomerative clustering; new-observation assignment is supported by K-Means only.")
+        cluster_meta = load_clustering_metadata()
+        if cluster_meta:
+            st.dataframe(pd.DataFrame(cluster_meta["metrics"]).T.rename_axis("Algorithm").reset_index(), hide_index=True, width="stretch")
+
+
+@st.cache_resource
+def load_clustering_artifacts():
+    artifact_path = Path(__file__).resolve().parent.parent / "models" / "clustering_artifacts.pkl"
+    if not artifact_path.is_file():
+        raise FileNotFoundError("Clustering artifacts are missing. Run `python scripts/export_models.py` from the project root.")
+    return joblib.load(artifact_path)
+
+
+def render_clustering_page():
+    st.markdown('<div class="main-header">Clustering Analysis</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Airbnb NYC listing segments from the completed unsupervised learning workflow.</div>', unsafe_allow_html=True)
+    metadata = load_clustering_metadata()
+    if not metadata:
+        st.error("Clustering metadata is missing. Generate the model artifacts before using this page.")
+        return
+    try:
+        artifacts = load_clustering_artifacts()
+    except Exception as exc:
+        st.error(f"Unable to load clustering artifacts: {exc}")
+        return
+    algo = st.selectbox("Clustering algorithm", ["K-Means Clustering", "Agglomerative Hierarchical Clustering"])
+    key = "kmeans" if algo.startswith("K-Means") else "agglomerative"
+    st.info("Both fitted workflows use the notebook's fixed three-cluster comparison sample (3,000 listings). Cluster numbers are identifiers, not ranked outcomes. Agglomerative clustering is transductive and does not assign new observations.")
+    metric_row = metadata["metrics"][key]
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Silhouette Score", f"{metric_row['Silhouette Score']:.4f}")
+    m2.metric("Davies-Bouldin Index", f"{metric_row['Davies-Bouldin Index']:.4f}")
+    m3.metric("Calinski-Harabasz Index", f"{metric_row['Calinski-Harabasz Index']:.4f}")
+    labels = np.asarray(artifacts["labels"][key])
+    coords = np.asarray(artifacts["pca_coordinates"])
+    fig, ax = plt.subplots(figsize=(8, 5))
+    scatter = ax.scatter(coords[:, 0], coords[:, 1], c=labels, cmap="tab10", s=12, alpha=.65)
+    ax.set(title=f"{algo} — PCA visualization", xlabel="Principal Component 1", ylabel="Principal Component 2")
+    fig.colorbar(scatter, ax=ax, label="Cluster identifier")
+    st.pyplot(fig, clear_figure=True)
+    st.caption(f"PCA is for display only; the first two components explain {sum(metadata['pca_explained_variance']):.1%} of variance. The models operate on the full transformed feature matrix.")
+    sizes = pd.Series(labels).value_counts().sort_index().rename("Listings").to_frame()
+    sizes["Share (%)"] = (sizes["Listings"] / len(labels) * 100).round(2)
+    st.subheader("Cluster distribution")
+    st.dataframe(sizes, width="stretch")
+    profile = artifacts["profile"].copy()
+    profile["Cluster"] = labels
+    st.subheader("Cluster characteristics")
+    numeric = metadata["numerical_features"]
+    st.dataframe(profile.groupby("Cluster")[numeric].mean().round(2), width="stretch")
+    st.caption("Profiles are post-clustering summaries in original units; they did not affect unsupervised fitting.")
+    if key == "kmeans":
+        st.subheader("Assign a new listing")
+        with st.form("clustering_observation_form"):
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                latitude = st.number_input("Latitude", min_value=40.0, max_value=41.0, value=40.73, format="%.5f")
+                longitude = st.number_input("Longitude", min_value=-75.0, max_value=-73.0, value=-73.95, format="%.5f")
+            with c2:
+                price = st.number_input("Nightly price ($)", min_value=0, max_value=100000, value=150)
+                minimum_nights = st.number_input("Minimum nights", min_value=0, max_value=10000, value=2)
+            with c3:
+                number_reviews = st.number_input("Number of reviews", min_value=0, max_value=10000, value=10)
+                reviews_month = st.number_input("Reviews per month", min_value=0.0, max_value=1000.0, value=1.0)
+            with c4:
+                host_count = st.number_input("Host listing count", min_value=0, max_value=10000, value=1)
+                availability = st.number_input("Availability (days/year)", min_value=0, max_value=365, value=180)
+            neighbourhood = st.selectbox("Neighbourhood group", ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"])
+            room = st.selectbox("Room type", ["Entire home/apt", "Private room", "Shared room"])
+            assign = st.form_submit_button("Assign listing to cluster", use_container_width=True)
+        if assign:
+            raw = pd.DataFrame([{"latitude": latitude, "longitude": longitude, "price": price, "minimum_nights": minimum_nights, "number_of_reviews": number_reviews, "reviews_per_month": reviews_month, "calculated_host_listings_count": host_count, "availability_365": availability, "neighbourhood_group": neighbourhood, "room_type": room}])[metadata["features"]]
+            for col in metadata["log_features"]:
+                raw[col] = np.log1p(raw[col].clip(lower=0))
+            transformed = artifacts["preprocessor"].transform(raw)
+            cluster_id = int(artifacts["kmeans"].predict(transformed)[0])
+            st.success(f"Assigned cluster identifier: {cluster_id}")
 
 def main():
     selected_page = render_sidebar()
@@ -580,6 +681,8 @@ def main():
         render_regression_page()
     elif selected_page == "Classification Prediction":
         render_classification_page()
+    elif selected_page == "Clustering Analysis":
+        render_clustering_page()
     elif selected_page == "Model Information":
         render_model_info_page()
 

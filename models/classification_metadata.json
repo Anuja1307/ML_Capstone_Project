@@ -152,31 +152,92 @@
       "key": "logistic",
       "Algorithm": "Logistic Regression",
       "Accuracy": 0.805259,
-      "Weighted F1": 0.801407
+      "Precision": 0.650602,
+      "Recall": 0.57754,
+      "Weighted F1": 0.801407,
+      "ROC-AUC": 0.835939
     },
     {
       "key": "svc",
       "Algorithm": "Support Vector Classifier",
       "Accuracy": 0.792466,
-      "Weighted F1": 0.783133
+      "Precision": 0.642361,
+      "Recall": 0.494652,
+      "Weighted F1": 0.783133,
+      "ROC-AUC": 0.789525
     },
     {
       "key": "knn",
       "Algorithm": "K-Nearest Neighbors",
-      "Accuracy": 0.761905,
-      "Weighted F1": 0.763374
+      "Accuracy": 0.761194,
+      "Precision": 0.548969,
+      "Recall": 0.569519,
+      "Weighted F1": 0.762573,
+      "ROC-AUC": 0.781713
     },
     {
       "key": "dt",
       "Algorithm": "Decision Tree Classifier",
-      "Accuracy": 0.739161,
-      "Weighted F1": 0.740563
+      "Accuracy": 0.778252,
+      "Precision": 0.655,
+      "Recall": 0.350267,
+      "Weighted F1": 0.753254,
+      "ROC-AUC": 0.806983
     },
     {
       "key": "nb",
       "Algorithm": "Gaussian Naive Bayes",
       "Accuracy": 0.683724,
-      "Weighted F1": 0.702132
+      "Precision": 0.448625,
+      "Recall": 0.828877,
+      "Weighted F1": 0.702132,
+      "ROC-AUC": 0.804439
+    },
+    {
+      "key": "rf",
+      "Algorithm": "Random Forest Classifier",
+      "Accuracy": 0.778252,
+      "Precision": 0.608392,
+      "Recall": 0.465241,
+      "Weighted F1": 0.767998,
+      "ROC-AUC": 0.810427
+    },
+    {
+      "key": "adaboost",
+      "Algorithm": "AdaBoost Classifier",
+      "Accuracy": 0.789623,
+      "Precision": 0.621118,
+      "Recall": 0.534759,
+      "Weighted F1": 0.784347,
+      "ROC-AUC": 0.83565
+    },
+    {
+      "key": "gradient_boosting",
+      "Algorithm": "Gradient Boosting Classifier",
+      "Accuracy": 0.796731,
+      "Precision": 0.642857,
+      "Recall": 0.529412,
+      "Weighted F1": 0.790041,
+      "ROC-AUC": 0.839187
+    },
+    {
+      "key": "bagging",
+      "Algorithm": "Bagging Classifier",
+      "Accuracy": 0.767591,
+      "Precision": 0.578073,
+      "Recall": 0.465241,
+      "Weighted F1": 0.758989,
+      "ROC-AUC": 0.80359
+    },
+    {
+      "key": "mlp",
+      "Algorithm": "MLP Classifier",
+      "Accuracy": 0.776119,
+      "Precision": 0.595469,
+      "Recall": 0.491979,
+      "Weighted F1": 0.768881,
+      "ROC-AUC": 0.793247
     }
-  ]
+  ],
+  "model_selection": "Baseline estimators from the completed notebook. Tuned models are reported separately; the notebook selects Logistic Regression as best general-purpose baseline and records MLP tuning gains."
 }
